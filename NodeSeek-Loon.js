@@ -23,15 +23,18 @@ function pick(src){var out={};HEADER_KEYS.forEach(function(k){var v=value(src||{
 function build(saved){var out={};HEADER_KEYS.forEach(function(k){out[k]=(saved&&saved[k])||DEFAULT_HEADERS[k];});return out;}
 function finish(){ $done(); }
 function capture(){
-  if(!enabled($argument && $argument.enable_capture)){log("Cookie 开关已关闭，跳过");return finish();}
-  var saved=pick(($request&&$request.headers)||{});
-  if(!Object.keys(saved).length){notify("Cookie 失败","未获取到请求头");return finish();}
+  var argument = (typeof $argument !== "undefined" && $argument) ? $argument : {};
+  if(!enabled(argument.enable_capture)){log("Cookie 开关已关闭，跳过");return finish();}
+  var requestHeaders = (typeof $request !== "undefined" && $request && $request.headers) ? $request.headers : {};
+  var saved=pick(requestHeaders);
+  if(!Object.keys(saved).length){notify("Cookie 失败","未获取到请求头，请确认使用 Request Script 并访问个人页面");return finish();}
   $persistentStore.write(JSON.stringify(saved),STORE_KEY);
   notify("Cookie 成功","请求头已保存，请关闭模块「Cookie」开关");
   finish();
 }
 function checkin(){
-  var fixed=enabled($argument && $argument.fixed_legs);
+  var argument = (typeof $argument !== "undefined" && $argument) ? $argument : {};
+  var fixed=enabled(argument.fixed_legs);
   var url=ATTEND_BASE+"?random="+(fixed?"false":"true");
   var raw=$persistentStore.read(STORE_KEY);
   if(!raw){notify("缺少请求头","请先打开 Cookie 并访问个人页面");return finish();}
@@ -48,5 +51,7 @@ function checkin(){
     finish();
   });
 }
-if($argument && Object.prototype.hasOwnProperty.call($argument,"enable_capture")) capture();
+var argument = (typeof $argument !== "undefined" && $argument) ? $argument : {};
+var isCapture = Object.prototype.hasOwnProperty.call(argument, "enable_capture");
+if(isCapture) capture();
 else checkin();
